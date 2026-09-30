@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "AutoScroll · 页面往返滚动",
+  "version": "1.2.0",
+  "description": "多个页面依次到底、逆序回顶。支持变速滚动、定时或随机停顿、停顿后随机回滑和循环。",
+  "minimum_chrome_version": "120",
+  "permissions": ["storage", "tabs", "scripting", "alarms"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_popup": "popup.html", "default_title": "AutoScroll · 页面往返滚动" }
+}

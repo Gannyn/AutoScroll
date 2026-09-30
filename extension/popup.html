@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AutoScroll · 页面往返滚动</title>
+  <link rel="stylesheet" href="popup.css">
+  <script type="module" src="popup.js"></script>
+</head>
+<body>
+  <main>
+    <header class="header">
+      <div class="brand-mark" aria-hidden="true">↕</div>
+      <div class="brand"><h1>AutoScroll<span>页面往返滚动</span></h1></div>
+      <span id="status" class="status">就绪</span>
+    </header>
+
+    <section class="run-card" aria-label="运行进度">
+      <div class="run-heading"><span id="run-title">让页面，自己往返。</span><span id="direction" class="direction">↓ ↑</span></div>
+      <p id="run-detail">依次到底，逆序回顶。把重复交给 AutoScroll。</p>
+      <div class="progress-track" role="progressbar" aria-label="当前页面滚动进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress"></div></div>
+      <div class="run-meta"><span id="page-progress">等待开始</span><span id="cycle-progress">已完成 0 轮</span></div>
+    </section>
+
+    <form id="config-form" novalidate>
+      <section class="pages-section">
+        <div class="section-heading"><label for="urls">页面队列 <span id="url-count" class="count">0</span></label><button id="add-current" type="button" class="text-button">＋ 当前页面</button></div>
+        <textarea id="urls" name="urls" rows="4" spellcheck="false" autocomplete="off" placeholder="https://example.com/page-a&#10;https://example.com/page-b&#10;https://example.com/page-c" aria-describedby="url-hint"></textarea>
+        <p id="url-hint" class="hint">每行一个完整地址，按填写顺序打开。</p>
+        <div class="route" aria-label="执行顺序"><span>A ↓</span><i>→</i><span>B ↓</span><i>→</i><span>C ↓↑</span><i>→</i><span>B ↑</span><i>→</i><span>A ↑</span></div>
+      </section>
+
+      <section class="settings-grid" aria-label="滚动设置">
+        <div class="field"><label for="speed">基准速度</label><div class="number-field"><input id="speed" name="speed" type="number" min="1" max="5000" step="1" value="160" aria-describedby="speed-hint"><span>像素 / 秒</span></div></div>
+        <div class="field"><label for="cycles">循环次数</label><div class="number-field"><input id="cycles" name="cycles" type="number" min="1" max="10000" step="1" value="1"><span>轮</span></div></div>
+        <div class="speed-presets" aria-label="速度预设"><button type="button" data-speed="80">慢速</button><button type="button" data-speed="160">标准</button><button type="button" data-speed="320">快速</button></div>
+        <label class="checkbox"><input id="infinite" type="checkbox">无限循环</label>
+      </section>
+      <p id="speed-hint" class="hint">实际速度平滑变化，约为基准速度的 60%–140%。</p>
+
+      <section class="pause-section" aria-label="滑动停顿设置">
+        <div class="pause-heading">
+          <label for="pause-mode">滑动停顿</label>
+          <select id="pause-mode">
+            <option value="continuous">连续滚动</option>
+            <option value="timed">定时停顿</option>
+            <option value="random">随机停顿</option>
+          </select>
+        </div>
+        <div id="timed-settings" class="settings-grid" hidden>
+          <div class="field"><label for="scroll-duration">每次滑动</label><div class="number-field"><input id="scroll-duration" type="number" min="0.1" max="3600" step="0.1" value="5"><span>秒</span></div></div>
+          <div class="field"><label for="pause-duration">随后停顿</label><div class="number-field"><input id="pause-duration" type="number" min="0.1" max="3600" step="0.1" value="2"><span>秒</span></div></div>
+        </div>
+        <div id="random-settings" class="settings-grid" hidden>
+          <div class="field"><label for="random-pause-min">最短停顿</label><div class="number-field"><input id="random-pause-min" type="number" min="1" max="3600" step="1" value="1"><span>秒</span></div></div>
+          <div class="field"><label for="random-pause-max">最长停顿</label><div class="number-field"><input id="random-pause-max" type="number" min="1" max="3600" step="1" value="20"><span>秒</span></div></div>
+        </div>
+        <p id="pause-hint" class="hint">持续滚动，直到页面顶部或底部。</p>
+        <div id="reverse-settings" hidden>
+          <label class="reverse-label" for="reverse-min">停顿后随机反向回滑</label>
+          <div class="reverse-range">
+            <input id="reverse-min" type="number" min="1" max="600" step="1" value="1" aria-label="反向回滑最小像素">
+            <span>至</span>
+            <input id="reverse-max" type="number" min="1" max="600" step="1" value="100" aria-label="反向回滑最大像素">
+            <span>像素</span>
+          </div>
+          <p class="hint">回滑后恢复原方向，回到停顿位置再开始下一段。</p>
+        </div>
+      </section>
+
+      <details id="advanced"><summary>更多设置 <span>边缘等待 · 滚动区域</span></summary>
+        <div class="advanced-fields">
+          <label for="edge-wait">到顶 / 到底等待（秒）<input id="edge-wait" type="number" min="0.3" max="10" step="0.1" value="1.5"></label>
+          <label for="selector">滚动容器（可选）<input id="selector" type="text" placeholder="留空自动识别，或填写 #content"></label>
+          <p class="hint">延迟加载的页面可适当增加等待时间。</p>
+        </div>
+      </details>
+
+      <p id="notice" role="status" aria-live="polite" hidden></p>
+      <div class="actions">
+        <button id="start" type="submit" class="primary"><span aria-hidden="true">▶</span> 开始滚动</button>
+        <button id="pause" type="button" class="primary" hidden>Ⅱ 暂停</button>
+        <button id="stop" type="button" class="secondary" hidden>停止</button>
+        <button id="save" type="button" class="secondary">保存配置</button>
+      </div>
+    </form>
+    <footer><span class="footer-dot"></span>关闭面板后继续运行<span class="footer-separator">·</span>配置仅保存在本机</footer>
+  </main>
+</body>
+</html>
